@@ -25,7 +25,7 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-
+    
     # 履歴を探る
     if message.channel.name not in channel_history:
         channel_history.append(message.channel.name)
@@ -36,7 +36,7 @@ async def on_message(message):
     author_index = author_history.index(message.author.display_name)
 
     channel_color = CHANNEL_COLOR_LIST[channel_index % len(CHANNEL_COLOR_LIST)]
-    author_color = AUTHOR_COLOR_LIST[author_index % len(CHANNEL_COLOR_LIST)]
+    author_color = AUTHOR_COLOR_LIST[author_index % len(AUTHOR_COLOR_LIST)]
 
     print(TEMPLATE.format(channel_color, message.channel.name, author_color, message.author.display_name))
     print("  " + message.content)
