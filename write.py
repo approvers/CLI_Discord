@@ -41,6 +41,11 @@ async def on_ready():
 
 
 async def sender(channel):
+    """
+    Exitって入力するまで入力された文字をdiscordに文章を送ります
+    Args:
+        channel(Discord.Channel): 最初にメッセージを送る先です
+    """
     while True:
         message = input(">>>")
         if message == ":change":
@@ -52,8 +57,8 @@ async def sender(channel):
             colons = []
             i = 0
             info = {"del": [], "emoji": []}
-            for c in message:
-                if c == ":":
+            for charactor in message:
+                if charactor == ":":
                     colons.append(i)
                 i += 1
 
@@ -87,6 +92,10 @@ async def sender(channel):
 
 
 def select_channel():
+    """
+    Returns:
+        Discord.Channel
+    """
     channels = CLIENT.get_all_channels()
     i = 0
     for channel in channels:
