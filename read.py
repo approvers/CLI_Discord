@@ -29,16 +29,16 @@ async def on_message(message):
     # 履歴を探る
     if message.channel.name not in channel_history:
         channel_history.append(message.channel.name)
-    if message.author.name not in author_history:
-        author_history.append(message.author.name)
+    if message.author.display_name not in author_history:
+        author_history.append(message.author.display_name)
     
     channel_index = channel_history.index(message.channel.name)
-    author_index = author_history.index(message.author.name)
+    author_index = author_history.index(message.author.display_name)
 
     channel_color = CHANNEL_COLOR_LIST[channel_index % len(CHANNEL_COLOR_LIST)]
     author_color = AUTHOR_COLOR_LIST[author_index % len(CHANNEL_COLOR_LIST)]
 
-    print(TEMPLATE.format(channel_color, message.channel, author_color, message.author))
+    print(TEMPLATE.format(channel_color, message.channel.name, author_color, message.author.display_name))
     print("  " + message.content)
     print()
 
