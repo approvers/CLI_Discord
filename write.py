@@ -1,58 +1,108 @@
-import discord
+"""discordにメッセージを送るスクリプト
+    引数にトークンを渡すと動きます
+"""
+
 import sys
 import asyncio
+import discord
 
-client = discord.Client()
-token = sys.argv[1]
+CLIENT = discord.Client()
+TOKEN = sys.argv[1]
+CONNECTING = True
 
 
-@client.event
+@CLIENT.event
 async def on_ready():
-    channels = client.get_all_channels()
+    """いつもの
+    いつものon_ready君だよ
+    接続1回目に入るチャンネル決めてループぶん回すよ
+    """
+    global CONNECTING
+    channels = CLIENT.get_all_channels()
     i = 0
-    for ch in channels:
-        print("{}: {}".format(i, ch.name))
-        i += 1
-    selected = input("何番のチャンネルに接続しますか?")
-    i = 0
-    channels = client.get_all_channels()
-    selected_channel_id = 0
-    for ch in channels:
-        if i == int(selected):
-            selected_channel_id = ch.id
-            break
-        i += 1
-    selected_channel = client.get_channel(selected_channel_id)
-    await selected_channel.send("ユーザーが来ました")
-    asyncio.ensure_future(sender(selected_channel))
+    if CONNECTING:
+
+        for channel in channels:
+            print("{}: {}".format(i, channel.name))
+            i += 1
+        selected = input("何番のチャンネルに接続しますか?")
+        i = 0
+        channels = CLIENT.get_all_channels()
+        selected_channel_id = 0
+
+        for channel in channels:
+            if i == int(selected):
+                selected_channel_id = channel.id
+                break
+            i += 1
+        selected_channel = CLIENT.get_channel(selected_channel_id)
+        asyncio.ensure_future(sender(selected_channel))
+        CONNECTING = False
 
 
 async def sender(channel):
     while True:
-        message = input()
+        message = input(">>>")
         if message == ":change":
             channel = select_channel()
             continue
+        emojis = list(await channel.guild.fetch_emojis())
+        if message.count(":") >= 2:
+            mess_list = list(message)
+            colons = []
+            i = 0
+            info = {"del": [], "emoji": []}
+            for c in message:
+                if c == ":":
+                    colons.append(i)
+                i += 1
+
+            encount = 0
+            for raw_emoji in emojis:
+                for i in range(len(colons) - 1):
+                    if encount == 0:
+                        encount -= 1
+                        continue
+                    if raw_emoji.name == message[colons[i] + 1: colons[i + 1]]:
+                        info["del"].append([colons[i], colons[i+1]])
+                        info["emoji"].append(raw_emoji)
+                        encount = 2
+            print(info)
+            deleted = 0
+            for i in range(len(info["del"])):
+                delete_start = info["del"][i][0] - deleted
+                delete_end = info["del"][i][1] - deleted + 1
+
+                del mess_list[delete_start: delete_end]
+                mess_list.insert(info["del"][i][0] - deleted, "{}")
+                deleted += info["del"][i][1] - info["del"][i][0]
+                print(info["del"][i][0])
+            message = "".join(mess_list)
+            for i in info["emoji"]:
+                print(i)
+                print(message)
+                message = message.replace("{}", str(i), 1)
+
         await channel.send(message)
 
 
 def select_channel():
-    channels = client.get_all_channels()
+    channels = CLIENT.get_all_channels()
     i = 0
-    for ch in channels:
-        print("{}: {}".format(i, ch.name))
+    for channel in channels:
+        print("{}: {}".format(i, channel.name))
         i += 1
     selected = input("何番のチャンネルに接続しますか?")
     i = 0
-    channels = client.get_all_channels()
+    channels = CLIENT.get_all_channels()
     selected_channel_id = 0
-    for ch in channels:
+    for channel in channels:
         if i == int(selected):
-            selected_channel_id = ch.id
+            selected_channel_id = channel.id
             break
         i += 1
-    selected_channel = client.get_channel(selected_channel_id)
+    selected_channel = CLIENT.get_channel(selected_channel_id)
     return selected_channel
 
 
-client.run(token)
+CLIENT.run(TOKEN)
