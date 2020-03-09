@@ -5,6 +5,8 @@ token = sys.argv[1]
 client = discord.Client()
 guild = None
 
+# チャンネル名とユーザー名の書式設定
+# CHANNEL_COLOR_LISTと AUTHOR_COLOR_LIST の値によって色が決まる
 TEMPLATE = "\033[48;5;{};38;5;007;1m {} \033[48;5;{};38;5;016m {} \033[m"
 
 CHANNEL_COLOR_LIST = [
@@ -47,9 +49,13 @@ async def on_ready():
     global guild
 
     guild = client.guilds[0]
+
+    # 画面を初期化してカーソルを(1, 1)に持ってく
     print("\033[2J")
     print("\033[1;1H")
     
+    # 水色の背景、サーバー名は太字、「に接続しています」は普通の文字
+    # そのあと書式設定を解除
     print("\033[48;5;069;1m {} \033[m\033[;48;5;069mに接続しています \033[m".format(guild.name))
     print()
 
@@ -67,14 +73,18 @@ async def on_message(message):
     # メッセージを送信した人が一致した場合は、
     # コンソールをキレイにするために打込み中表示を消す
     if no_typing_interrpution:
+        # 一個上に行く
         print("\033[1A\033[2K", end="")
         if latest_typer == message.author.id:
+            # 同じ人が連続して送信した場合はもっと上に行く
             print("\033[1A\033[2K", end="")
-    
+        
     if latest_typer != message.author.id:
+        # 違う人がタイピングしたらチャンネル名／ユーザー名を書く
         print(TEMPLATE.format(channel_color, message.channel.name, author_color, message.author.display_name))
+    
+    # メッセージを出す
     print("  " + message.content)
-    print("  " + str(typing_condition))
     print()
     
     latest_typer = message.author.id
@@ -86,16 +96,17 @@ async def on_typing(channel, user, when):
 
     if user.id not in typing_condition:
         typing_condition.append(user.id)
+        # 紫背景に「打込」→背景が消えてユーザー固有の色＋太字でユーザー名
         print("\033[48;5;128;1m 打込 \033[;38;5;{};1m {} \033[m".format(author_color, user.display_name))
 
 @client.event
 async def on_member_update(before: discord.Member, after: discord.Member):
 
     STATUS_DISPLAY_INFO = {
-        discord.Status.online : [28, "オン"],
-        discord.Status.idle   : [32, "放置"],
-        discord.Status.dnd    : [160, "取込"],
-        discord.Status.offline: [240, "オフ"],
+        discord.Status.online : [28, "オン"],   # 緑
+        discord.Status.idle   : [32, "放置"],   # 若干濁った水色
+        discord.Status.dnd    : [160, "取込"],  # 真っ赤ではない赤
+        discord.Status.offline: [240, "オフ"],  # 灰色
     }
 
     status: discord.Status = after.status
@@ -109,8 +120,10 @@ async def on_member_update(before: discord.Member, after: discord.Member):
     typing_condition.append(-1)
     
     status_color, prefix = STATUS_DISPLAY_INFO[after.status]
-
+    
     author_color = get_user_color(after)
+    # ステータスに応じた色が設定される(STATUS_DISPLAY_INFO参照)
+    # そのあと、背景色が消えてユーザー固有の色＋太字でユーザー名が描画される
     print("\033[48;5;{};1m {} \033[;38;5;{};1m {} \033[m".format(status_color, prefix, author_color, after.display_name))
 
 client.run(token)
