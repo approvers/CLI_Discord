@@ -52,6 +52,7 @@ async def sender(channel):
           message = input("\033[1m>>>")
 
         if len(message.strip()) == 0:
+            print("空文字送んなカス")
             continue
         
         print("\033[m", end="")
