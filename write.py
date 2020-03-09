@@ -47,7 +47,11 @@ async def sender(channel):
         channel(Discord.Channel): 最初にメッセージを送る先です
     """
     while True:
-        message = input(">>>")
+        input("\033[2mPress Enter...\033[m")
+        async with channel.typing():
+          message = input("\033[1m>>>")
+        
+        print("\033[m", end="")
         if message == ":exit":
             exiter()
         if message == ":change":
@@ -91,7 +95,6 @@ async def sender(channel):
                 message = message.replace("{}", str(i), 1)
 
         await channel.send(message)
-
 
 def select_channel():
     """
