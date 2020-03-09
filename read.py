@@ -16,9 +16,13 @@ AUTHOR_COLOR_LIST = [
     123, 190, 195, 219, 225, 229
 ]
 
+
 channel_history = []
 author_history = []
 
+typing_condition = []
+
+latest_typer = -1
 
 def get_channel_color(channel):
     # 履歴を探る
@@ -47,42 +51,67 @@ async def on_ready():
     print("\033[2J")
     print("\033[1;1H")
     
-    print("\033[48;5;069;1m {} \033[m\033[48;5;069mに接続しています \033[m".format(guild.name))
+    print("\033[48;5;069;1m {} \033[m\033[;48;5;069mに接続しています \033[m".format(guild.name))
     print()
 
 
 @client.event
 async def on_message(message):
-    
+    global  latest_typer
+
     channel_color = get_channel_color(message.channel)
     author_color = get_user_color(message.author)
-
-    print(TEMPLATE.format(channel_color, message.channel.name, author_color, message.author.display_name))
+    
+    no_typing_interrpution = len(typing_condition) > 0 and typing_condition[-1] == message.author.id
+    
+    # 最後に「打込中」と表示された人と、
+    # メッセージを送信した人が一致した場合は、
+    # コンソールをキレイにするために打込み中表示を消す
+    if no_typing_interrpution:
+        print("\033[1A\033[2K", end="")
+        if latest_typer == message.author.id:
+            print("\033[1A\033[2K", end="")
+    
+    if latest_typer != message.author.id:
+        print(TEMPLATE.format(channel_color, message.channel.name, author_color, message.author.display_name))
     print("  " + message.content)
+    print("  " + str(typing_condition))
     print()
+    
+    latest_typer = message.author.id
+    typing_condition.clear()
 
 @client.event
 async def on_typing(channel, user, when):
     author_color = get_user_color(user)
-    print("\033[38;5;{};2m{}がタイピング中です\033[m".format(author_color, user.display_name))
+
+    if user.id not in typing_condition:
+        typing_condition.append(user.id)
+        print("\033[48;5;128;1m 打込 \033[;38;5;{};1m {} \033[m".format(author_color, user.display_name))
 
 @client.event
 async def on_member_update(before: discord.Member, after: discord.Member):
+
+    STATUS_DISPLAY_INFO = {
+        discord.Status.online : [28, "オン"],
+        discord.Status.idle   : [32, "放置"],
+        discord.Status.dnd    : [160, "取込"],
+        discord.Status.offline: [240, "オフ"],
+    }
+
     status: discord.Status = after.status
     status_text = ""
+    
+    # ステータス以外の変化でもこのイベントは引っかかるので、
+    # とりあえずステータス以外の変更は弾いておく
+    if before.status == after.status:
+        return
 
-    if status == discord.Status.online:
-        status_text = "オンライン"
-    elif status == discord.Status.idle:
-        status_text = "放置中"
-    elif status == discord.Status.dnd:
-        status_text = "お取り込み中"
-    elif status == discord.Status.offline:
-        status_text = "オフライン"
-    else:
-        status_text = "█████中"
+    typing_condition.append(-1)
+    
+    status_color, prefix = STATUS_DISPLAY_INFO[after.status]
 
     author_color = get_user_color(after)
-    print("\033[38;5;{};2m{}は{}です\033[m".format(author_color, after.display_name, status_text))
+    print("\033[48;5;{};1m {} \033[;38;5;{};1m {} \033[m".format(status_color, prefix, author_color, after.display_name))
 
 client.run(token)
