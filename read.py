@@ -1,6 +1,5 @@
 import discord
 import sys
-import asyncio
 
 token = sys.argv[1]
 client = discord.Client()
