@@ -94,7 +94,7 @@ async def sender(channel):
                 print(message)
                 message = message.replace("{}", str(i), 1)
 
-        await channel.send(message
+        await channel.send(message)
 
 def select_channel():
     """
