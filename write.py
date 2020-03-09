@@ -50,6 +50,9 @@ async def sender(channel):
         input("\033[2mPress Enter...\033[m")
         async with channel.typing():
           message = input("\033[1m>>>")
+
+        if len(message.strip()) == 0:
+            continue
         
         print("\033[m", end="")
         if message == ":exit":
