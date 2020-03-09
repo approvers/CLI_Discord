@@ -25,7 +25,7 @@ async def on_ready():
         for channel in channels:
             print("{}: {}".format(i, channel.name))
             i += 1
-        selected = input("何番のチャンネルに接続しますか?")
+        selected = input("何番のチャンネルに接続しますか?\n")
         i = 0
         channels = CLIENT.get_all_channels()
         selected_channel_id = 0
@@ -48,6 +48,8 @@ async def sender(channel):
     """
     while True:
         message = input(">>>")
+        if message == ":exit":
+            exiter()
         if message == ":change":
             channel = select_channel()
             continue
@@ -113,5 +115,16 @@ def select_channel():
     selected_channel = CLIENT.get_channel(selected_channel_id)
     return selected_channel
 
+def exiter():
+    """
+    :exitの実装 なんで関数化してるかというと、深い事情があります
+    Args:
+        なんもない
+    Returns:
+        なんもない
+    """
+    print ("クライアントを終了します...")
+    print ("理由はわかりませんがこれにはしばらく時間がかかります...")
+    sys.exit()
 
 CLIENT.run(TOKEN)
