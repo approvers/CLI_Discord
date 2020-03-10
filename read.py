@@ -1,6 +1,9 @@
 import discord
 import sys
 import re
+import wave
+import pygame.mixer
+import atexit
 
 import utils
 
@@ -10,6 +13,8 @@ mention_notify = []
 token = sys.argv[1]
 client = discord.Client()
 guild = None
+
+notify_sound = None
 
 # チャンネル名とユーザー名の書式設定
 # CHANNEL_COLOR_LISTと AUTHOR_COLOR_LIST の値によって色が決まる
@@ -52,7 +57,7 @@ def get_user_color(author):
 
 @client.event
 async def on_ready():
-    global guild, mention_notify #TODO: Hey, too many global! Do classificate this asap, loxy!
+    global guild, mention_notify, notify_sound #TODO: Hey, too many global! Do classificate this asap, loxy!
     guild = client.guilds[0]
 
     # 起動引数からオプションを取得する
@@ -68,6 +73,11 @@ async def on_ready():
         if income_option == "m" or income_option == "mention":
             mention_notify = arg.split(",")
         income_option = ""
+    
+    # メンション通知音を読み込む
+    pygame.mixer.pre_init(buffer=512)
+    pygame.mixer.init()
+    notify_sound = pygame.mixer.Sound("./mention_notify.wav")
 
     # 画面を初期化してカーソルを(1, 1)に持ってく
     print("\033[2J")
@@ -112,11 +122,13 @@ async def on_message(message):
                 mentioned_user = guild.get_member(mention_id)
                 mentioned_name = mentioned_user.display_name
                 if mentioned_user.display_name in mention_notify or mentioned_user.name in mention_notify:
-                    styled_mention += "\a\033[48;5;052m"
+                    styled_mention += "\033[48;5;052m"
+                    notify_sound.play()
             elif contents[2] == "&":
                 mentioned_name = guild.get_role(int(contents[3:-1])).name
                 if mentioned_name in mention_notify:
-                    styled_mention += "\a\033[48;5;052m"
+                    styled_mention += "\033[48;5;052m"
+                    notify_sound.play()
         
         styled_mention += "\033[38;5;220;1m@{}\033[m".format(mentioned_name)
 
@@ -185,4 +197,8 @@ async def on_member_update(before: discord.Member, after: discord.Member):
     # そのあと、背景色が消えてユーザー固有の色＋太字でユーザー名が描画される
     print("\033[48;5;{};1m {} \033[;38;5;{};1m {} \033[m".format(status_color, prefix, author_color, after.display_name))
 
+def at_exit():
+    pygame.quit()
+
+atexit.register(at_exit)
 client.run(token)
