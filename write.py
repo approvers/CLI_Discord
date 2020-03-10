@@ -97,6 +97,49 @@ async def sender(channel):
                 print(i)
                 print(message)
                 message = message.replace("{}", str(i), 1)
+        
+        # --- メンションを探す
+        # 必要なデータを持ってくる
+        guild: discord.Guild = CLIENT.guilds[0]
+        members = guild.members
+        roles = guild.roles
+
+        index = -1
+        raw_mentions = []
+        # 文字列をパースする
+        while index < len(message):
+            location = message.find("@", index + 1)
+            if location == -1:
+                break
+            
+            # @からあとの部分
+            # この直後にユーザー名かロール名が来てれば
+            # メンションとして認識されるわけだ
+            mention_text = message[message.find("@", index + 1) + 1:]
+            for member in members:
+                if mention_text.find(member.display_name) == 0 or \
+                   mention_text.find(member.name) == 0:
+                    raw_mentions.append(member)
+                    break
+            for role in roles:
+                if mention_text.find(role.name) == 0:
+                    raw_mentions.append(role)
+                    break
+
+            index = location
+ 
+        for raw_mention in raw_mentions:
+            if isinstance(raw_mention, discord.Member):
+                message = message.replace("@" + raw_mention.display_name, raw_mention.mention)
+                message = message.replace("@" + raw_mention.name, raw_mention.mention)
+            elif isinstance(raw_mention, discord.Role):
+                if not raw_mention.mentionable:
+                    print("\033[38;5;208;1m役職「{}」はメンション出来ません\033[m".format(raw_mention.name))
+                    print("たぶんロールの設定で無効になってる")
+                message = message.replace("@" + raw_mention.name, raw_mention.mention)
+            
+            print("\033[38;5;120;4mメンション >> {}\033[m".format(raw_mention.name))
+        
 
         await channel.send(message)
 
