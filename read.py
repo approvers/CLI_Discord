@@ -4,6 +4,9 @@ import re
 
 import utils
 
+# --- 起動引数
+mention_notify = []
+
 token = sys.argv[1]
 client = discord.Client()
 guild = None
@@ -49,9 +52,22 @@ def get_user_color(author):
 
 @client.event
 async def on_ready():
-    global guild
-
+    global guild, mention_notify #TODO: Hey, too many global! Do classificate this asap, loxy!
     guild = client.guilds[0]
+
+    # 起動引数からオプションを取得する
+    income_option = ""
+    for arg in sys.argv:
+        if arg.startswith("--"):
+            income_option = arg[2:]
+            continue
+        elif arg.startswith("-"):
+            income_option = arg[1:]
+            continue
+        
+        if income_option == "m" or income_option == "mention":
+            mention_notify = arg.split(",")
+        income_option = ""
 
     # 画面を初期化してカーソルを(1, 1)に持ってく
     print("\033[2J")
@@ -60,7 +76,16 @@ async def on_ready():
     # 水色の背景、サーバー名は太字、「に接続しています」は普通の文字
     # そのあと書式設定を解除
     print("\033[48;5;069;1m {} \033[m\033[;48;5;069mに接続しています \033[m".format(guild.name))
+    if income_option != "":
+        print("\033[38;5;208;1mよくわからんオプション指定がありました\033[m")
+
+    for name in mention_notify:
+        print("\033[38;5;192;1m@{}はメンション通知対象です\033[m".format(name))
     print()
+    
+    # ユーザーに通知し終わったあとにeveryoneとhereを通知対象リストに入れる
+    mention_notify.append("everyone")
+    mention_notify.append("here")
 
 
 @client.event
@@ -76,16 +101,24 @@ async def on_message(message):
         if mention_match is None:
             break
         contents = mention_match[0]
+        styled_mention = ""
 
         if contents == "everyone" or contents == "here":
             mentioned_name = contents
+            styled_mention += "\a"
         else:
+            mention_id = int(contents[3:-1])
             if contents[2] == "!":
-                mentioned_name = guild.get_member(int(contents[3:-1])).display_name
+                mentioned_user = guild.get_member(mention_id)
+                mentioned_name = mentioned_user.display_name
+                if mentioned_user.display_name in mention_notify or mentioned_user.name in mention_notify:
+                    styled_mention += "\a\033[48;5;052m"
             elif contents[2] == "&":
                 mentioned_name = guild.get_role(int(contents[3:-1])).name
+                if mentioned_name in mention_notify:
+                    styled_mention += "\a\033[48;5;052m"
         
-        styled_mention = "\a\033[48;5;052;38;5;220;1m@{}\033[m".format(mentioned_name)
+        styled_mention += "\033[38;5;220;1m@{}\033[m".format(mentioned_name)
 
         length = mention_match.end() - mention_match.start()
         msg = utils.replace_at(msg, mention_match.start(), length, styled_mention)
