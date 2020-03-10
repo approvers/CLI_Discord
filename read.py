@@ -1,5 +1,8 @@
 import discord
 import sys
+import re
+
+import utils
 
 token = sys.argv[1]
 client = discord.Client()
@@ -62,16 +65,38 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-    global  latest_typer
+    global latest_typer
+    
+    msg = message.content
+    # メンションを探る
+    # MITライセンス下のRappptz/discord.pyリポジトリから引っ張ってきたコードを改変して使ってます
+    # 具体的には https://github.com/Rapptz/discord.py/blob/5e6335750819588062790c6b93d604d3bc7c3862/discord/utils.py#L503 です
+    while True:
+        mention_match = re.search(r'<@(everyone|here|[!&]?[0-9]{17,21})>', msg)
+        if mention_match is None:
+            break
+        contents = mention_match[0]
 
-    channel_color = get_channel_color(message.channel)
-    author_color = get_user_color(message.author)
+        if contents == "everyone" or contents == "here":
+            mentioned_name = contents
+        else:
+            if contents[2] == "!":
+                mentioned_name = guild.get_member(int(contents[3:-1])).display_name
+            elif contents[2] == "&":
+                mentioned_name = guild.get_role(int(contents[3:-1])).name
+        
+        styled_mention = "\a\033[48;5;052;38;5;220;1m@{}\033[m".format(mentioned_name)
+
+        length = mention_match.end() - mention_match.start()
+        msg = utils.replace_at(msg, mention_match.start(), length, styled_mention)
     
-    no_typing_interrpution = len(typing_condition) > 0 and typing_condition[-1] == message.author.id
-    
+    # コンソールをキレイにするために、
     # 最後に「打込中」と表示された人と、
     # メッセージを送信した人が一致した場合は、
     # コンソールをキレイにするために打込み中表示を消す
+    
+    no_typing_interrpution = len(typing_condition) > 0 and typing_condition[-1] == message.author.id
+    
     if no_typing_interrpution:
         # 一個上に行く
         print("\033[1A\033[2K", end="")
@@ -79,12 +104,13 @@ async def on_message(message):
             # 同じ人が連続して送信した場合はもっと上に行く
             print("\033[1A\033[2K", end="")
         
-    if latest_typer != message.author.id:
+    channel_color = get_channel_color(message.channel)
+    author_color = get_user_color(message.author)
+    if no_typing_interrpution and latest_typer != message.author.id:
         # 違う人がタイピングしたらチャンネル名／ユーザー名を書く
         print(TEMPLATE.format(channel_color, message.channel.name, author_color, message.author.display_name))
     
-    # メッセージを出す
-    print("  " + message.content)
+    print("  " + msg)
     print()
     
     latest_typer = message.author.id
