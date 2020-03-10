@@ -90,7 +90,7 @@ async def on_ready():
         print("\033[38;5;208;1mよくわからんオプション指定がありました\033[m")
 
     for name in mention_notify:
-        print("\033[38;5;192;1m@{}はメンション通知対象です\033[m".format(name))
+        print("\033[38;5;192;1m@{}へのメンションは通知対象です\033[m".format(name))
     print()
     
     # ユーザーに通知し終わったあとにeveryoneとhereを通知対象リストに入れる
