@@ -140,24 +140,22 @@ async def on_message(message):
     # メッセージを送信した人が一致した場合は、
     # コンソールをキレイにするために打込み中表示を消す
     
-    no_typing_interrpution = len(typing_condition) > 0 and typing_condition[-1] == message.author.id
+    type_cond_without_me = [x for x in typing_condition if x != message.author.id]
+    no_typing_interrpution = len(type_cond_without_me) == 0 or typing_condition[-1:] == [message.author.id]
     
-    if no_typing_interrpution:
-        # 一個上に行く
-        print("\033[1A\033[2K", end="")
-        if latest_typer == message.author.id:
-            # 同じ人が連続して送信した場合はもっと上に行く
-            print("\033[1A\033[2K", end="")
-        
     channel_color = get_channel_color(message.channel)
     author_color = get_user_color(message.author)
-    if no_typing_interrpution and latest_typer != message.author.id:
-        # 違う人がタイピングしたらチャンネル名／ユーザー名を書く
+
+    if typing_condition[-1:] == [message.author.id]:
+        print("\033[1A\033[2K", end="")
+
+    if len(type_cond_without_me) > 0 or latest_typer != message.author.id:
         print(TEMPLATE.format(channel_color, message.channel.name, author_color, message.author.display_name))
+    else:
+        print("\033[1A\033[2K", end="")
     
     print("  " + msg)
     print()
-    
     latest_typer = message.author.id
     typing_condition.clear()
 
@@ -196,6 +194,7 @@ async def on_member_update(before: discord.Member, after: discord.Member):
     # ステータスに応じた色が設定される(STATUS_DISPLAY_INFO参照)
     # そのあと、背景色が消えてユーザー固有の色＋太字でユーザー名が描画される
     print("\033[48;5;{};1m {} \033[;38;5;{};1m {} \033[m".format(status_color, prefix, author_color, after.display_name))
+    print()
 
 def at_exit():
     pygame.quit()
